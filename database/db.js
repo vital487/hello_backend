@@ -1,19 +1,29 @@
+const fs = require('fs');
+const path = require('path');
+
 const data = {
-    host: '94.62.78.170',
-    user: 'nodejs',
-    password: 'nodejs',
-    database: 'webchat2'
+  host: 'vital487.mysql.database.azure.com',
+  user: 'nodejs@vital487',
+  password: '5440123718',
+  database: 'webchat',
+  ssl: {
+    ca: fs.readFileSync(path.join(__dirname, '../BaltimoreCyberTrustRoot.crt.pem'))
+  }
 }
 
 exports.initDbConnection = () => {
-    const mysql = require('mysql');
-    const db = mysql.createConnection(data);
+  const mysql = require('mysql');
+  const db = mysql.createConnection(data);
 
-    db.connect((err) => {
-        if (err) throw err;
-    });
+  db.connect((err) => {
+    if (err) throw err;
+  });
 
-    return db;
+  setInterval(() => {
+    db.query('select 1');
+  }, 60000);
+
+  return db;
 }
 
 /*
@@ -88,4 +98,5 @@ CREATE TABLE `messages` (
   FOREIGN KEY (`to_id`) REFERENCES `users` (`id`),
   FOREIGN KEY (`from_id`) REFERENCES `users` (`id`)
 );
+
 */

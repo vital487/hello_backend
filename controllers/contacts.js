@@ -5,6 +5,7 @@ const lib = require('../lib/lib')
 const path = require('path')
 const jwt = require('jsonwebtoken')
 const keyPair = jwtUtils.getKeyPair('pub.key', 'priv.key')
+const users = require('../index').users;
 
 exports.routes = (app, db) => {
 
@@ -66,6 +67,14 @@ exports.routes = (app, db) => {
                         res.status(201).json(contact)
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
+
+                        //Check if destination is online
+                        if (typeof users[`${req.body.id}`] !== 'undefined') {
+                            //Send new contact request notification for every socket from destination
+                            for (let i = 0; i < users[`${req.body.id}`].length; i++) {
+                                users[`${req.body.id}`][i].emit('request', user.id);
+                            }
+                        }
                     })
                 })
             })
@@ -116,7 +125,7 @@ exports.routes = (app, db) => {
                     const contact = result
                     //Remove contact
                     let sqlRemove = 'delete from contacts where id = ?'
-console.log('vai remover')
+
                     db.query(sqlRemove, result[0].id, (err, result) => {
                         if (err) return res.sendStatus(400)
                         res.json(contact[0])
@@ -167,6 +176,14 @@ console.log('vai remover')
                         res.json(contact[0])
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
+
+                        //Check if destination is online
+                        if (typeof users[`${req.body.id}`] !== 'undefined') {
+                            //Send new contact added notification for every socket from destination
+                            for (let i = 0; i < users[`${req.body.id}`].length; i++) {
+                                users[`${req.body.id}`][i].emit('contact', user.id);
+                            }
+                        }
                     })
                 })
             })

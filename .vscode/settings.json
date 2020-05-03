@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/54c8a8ac-b684-4670-bbe5-843ffde63d5d/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/vital487",
+    "appService.deploySubpath": ""
+}

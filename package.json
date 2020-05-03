@@ -4,7 +4,8 @@
   "description": "Chat Backend",
   "main": "index.js",
   "scripts": {
-    "start": "index.js"
+    "start": "index.js",
+    "build": "webpack"
   },
   "author": "Francisco Vital",
   "license": "ISC",
@@ -21,6 +22,12 @@
     "jsonwebtoken": "^8.5.1",
     "mysql": "^2.18.1",
     "socket.io": "^2.3.0",
-    "ws": "^7.2.1"
+    "uws": "^100.0.1",
+    "websockets": "^0.2.0",
+    "ws": "^7.2.5"
+  },
+  "devDependencies": {
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
   }
 }
