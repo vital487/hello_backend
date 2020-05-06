@@ -51,7 +51,7 @@ app.use(function (req, res) {
 });
 
 //Start HTTPS Server
-/* const server = https.createServer({
+/*  const server = https.createServer({
     cert: fs.readFileSync('/etc/letsencrypt/live/chatapi.francecentral.cloudapp.azure.com/fullchain.pem'),
     key: fs.readFileSync('/etc/letsencrypt/live/chatapi.francecentral.cloudapp.azure.com/privkey.pem')
 }, app) */
