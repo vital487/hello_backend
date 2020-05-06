@@ -7,7 +7,9 @@ const app = express()
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
 const keyPair = require('./lib/utils').getKeyPair('pub.key', 'priv.key')
-var compression = require('compression');
+const compression = require('compression');
+const path = require('path');
+const os = require('os');
 
 //Get online users socket
 let users = {};
@@ -79,9 +81,9 @@ io.on('connection', (socket) => {
                     if (users[`${user.id}`][i] === socket) {
                         users[`${user.id}`].splice(i, 1);
                         break;
-                    }                    
+                    }
                 }
             });
         });
-    });    
+    });
 });
