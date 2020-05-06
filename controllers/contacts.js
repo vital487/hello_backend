@@ -39,7 +39,7 @@ exports.routes = (app, db) => {
                 if (err) return res.sendStatus(400)
                 if (result.length !== 2) return res.sendStatus(400)
 
-                const users = result
+                const usersResult = result
                 //Verify if a contact already exists
                 const sqlContact = 'select id from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
@@ -52,9 +52,9 @@ exports.routes = (app, db) => {
                         from_id: user.id,
                         accepted: 0,
                         to_id: req.body.id,
-                        from_alias: users[0].id === user.id ? users[0].name : users[1].name,
+                        from_alias: usersResult[0].id === user.id ? usersResult[0].name : usersResult[1].name,
                         from_color: '#987654',
-                        to_alias: users[0].id === req.body.id ? users[0].name : users[1].name,
+                        to_alias: usersResult[0].id === req.body.id ? usersResult[0].name : usersResult[1].name,
                         to_color: '#123456'
                     }
 
@@ -72,7 +72,7 @@ exports.routes = (app, db) => {
                         if (typeof users[`${req.body.id}`] !== 'undefined') {
                             //Send new contact request notification for every socket from destination
                             for (let i = 0; i < users[`${req.body.id}`].length; i++) {
-                                users[`${req.body.id}`][i].emit('request', user.id);
+                                users[`${req.body.id}`][i].emit('contact_request', user.id);
                             }
                         }
                     })
@@ -111,7 +111,6 @@ exports.routes = (app, db) => {
                 if (err) return res.sendStatus(400)
                 if (result.length !== 2) return res.sendStatus(400)
 
-                const users = result
                 //Verify if the contact exists
                 const sqlContact = 'select * from contacts where from_id = ? and to_id = ? or from_id = ? and to_id'
 
@@ -131,6 +130,14 @@ exports.routes = (app, db) => {
                         res.json(contact[0])
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
+
+                        //Check if destination is online
+                        if (typeof users[`${req.body.id}`] !== 'undefined') {
+                            //Send contact removed notification for every socket from destination
+                            for (let i = 0; i < users[`${req.body.id}`].length; i++) {
+                                users[`${req.body.id}`][i].emit('contact_removed', user.id);
+                            }
+                        }
                     })
                 })
             })
@@ -181,7 +188,7 @@ exports.routes = (app, db) => {
                         if (typeof users[`${req.body.id}`] !== 'undefined') {
                             //Send new contact added notification for every socket from destination
                             for (let i = 0; i < users[`${req.body.id}`].length; i++) {
-                                users[`${req.body.id}`][i].emit('contact', user.id);
+                                users[`${req.body.id}`][i].emit('accepted_request', user.id);
                             }
                         }
                     })
@@ -477,6 +484,9 @@ exports.routes = (app, db) => {
         })
     })
 
+    /**
+     * Info about a contact with other
+     */
     app.get('/api/contact/:id', jwtUtils.getToken, (req, res) => {
         //Verify token
         jwt.verify(req.token, keyPair.pub, (err, user) => {
@@ -561,7 +571,7 @@ exports.routes = (app, db) => {
                 db.query(sqlRequests, [user.id, user.id, req.params.id, req.params.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
                     if (result.length === 0) return res.sendStatus(400)
-                    if (result[0].last_update + 120 > lib.getUnixTime()) res.json({ online: true })
+                    if (result[0].last_update + 300 > lib.getUnixTime()) res.json({ online: true })
                     else res.json({ online: false })
 
                     //Update user last action

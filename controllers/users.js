@@ -270,6 +270,35 @@ exports.routes = (app, db) => {
     })
 
     /**
+     * Get info about one user
+     */
+    app.get('/api/search/:id', jwtUtils.getToken, (req, res) => {
+        //Verify token
+        jwt.verify(req.token, keyPair.pub, (err, user) => {
+            if (err) return res.sendStatus(403)
+            if (user.id === parseInt(req.params.id)) return res.sendStatus(400)
+
+            let sql = 'select id, firstname, surname, gender, city, country from users where id = ? or id = ? limit 2'
+            db.query(sql, [user.id, parseInt(req.params.id)], (err, result) => {
+                if (err) return res.sendStatus(400)
+                if (result.length !== 2) return res.sendStatus(400)
+
+                let row;
+
+                if (result[0].id === user.id) {
+                    row = result[1];
+                } else {
+                    row = result[0];
+                }
+
+                res.json(row)
+                //Update user last action
+                lib.updateUserLastActionTime(db, user.id)
+            })
+        })
+    })
+
+    /**
      * Get token information
      * 
      * GET /api/verifytoken

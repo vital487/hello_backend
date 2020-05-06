@@ -58,6 +58,8 @@ exports.routes = (app, db) => {
                 db.query(insert, message, (err, result) => {
                     if (err) return res.sendStatus(400)
                     message.id = result.insertId
+                    //Frontend uses time attribute and not date
+                    message.time = message.date;   
                     res.json(message)
                     //Update user last action
                     lib.updateUserLastActionTime(db, user.id)
@@ -96,36 +98,25 @@ exports.routes = (app, db) => {
             //If sending message to himself
             if (req.body.userId === user.id) return res.sendStatus(400)
 
-            //Verify if there is a contact
-            let sqlContact = 'select id from contacts where accepted = 1 and (from_id = ? and to_id = ? or from_id = ? and to_id = ?)'
+            if (req.body.start === -1) {
+                sql = 'select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id desc limit ?'
 
-            db.query(sqlContact, [user.id, req.body.userId, req.body.userId, user.id], (err, result) => {
-                if (err) return res.sendStatus(400)
-                //If contact does not exist
-                if (result.length === 0) return res.sendStatus(400)
+                db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.number], (err, result) => {
+                    if (err) return res.sendStatus(400)
+                    res.json(result)
+                    //Update user last action
+                    lib.updateUserLastActionTime(db, user.id)
+                })
+            } else {
+                sql = 'select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id desc limit ?'
 
-                let sql
-
-                if (req.body.start === -1) {
-                    sql = 'select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id limit ?'
-
-                    db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.number], (err, result) => {
-                        if (err) return res.sendStatus(400)
-                        res.json(result)
-                        //Update user last action
-                        lib.updateUserLastActionTime(db, user.id)
-                    })
-                } else {
-                    sql = 'select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id limit ?'
-
-                    db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.start, req.body.number], (err, result) => {
-                        if (err) return res.sendStatus(400)
-                        res.json(result)
-                        //Update user last action
-                        lib.updateUserLastActionTime(db, user.id)
-                    })
-                }
-            })
+                db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.start, req.body.number], (err, result) => {
+                    if (err) return res.sendStatus(400)
+                    res.json(result)
+                    //Update user last action
+                    lib.updateUserLastActionTime(db, user.id)
+                })
+            }
         })
     })
 
