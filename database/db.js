@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 const data = {
-  host: 'vital487.mysql.database.azure.com',
-  user: 'nodejs@vital487',
-  password: '5440123718',
-  database: 'webchat',
-  ssl: {
+  host: '192.168.1.93',
+  user: 'nodejs',
+  password: 'nodejs',
+  database: 'webchat2',
+  /* ssl: {
     ca: fs.readFileSync(path.join(__dirname, '../BaltimoreCyberTrustRoot.crt.pem'))
-  }
+  } */
 }
 
 exports.initDbConnection = () => {

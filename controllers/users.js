@@ -189,7 +189,7 @@ exports.routes = (app, db) => {
             db.query(sql, user.id, (err, result) => {
                 if (err) return res.sendStatus(403)
                 if (result === 0) return res.sendStatus(403)
-                res.json(result)
+                res.json(result[0])
                 //Update user last action
                 lib.updateUserLastActionTime(db, user.id)
             })
@@ -245,25 +245,48 @@ exports.routes = (app, db) => {
                     if (err) return res.sendStatus(400)
                     if (result.length !== 0 && result[0].id != user.id) return res.status(400).send('Email already exists')
 
-                    let sql = 'update users set firstname = ?, surname = ?, email = ?, gender = ?, birth = ?, city = ?, country = ? where id = ?'
+                    //Get user name
+                    let sqlRealname = 'select firstname, surname from users where id = ?';
 
-                    const params = [
-                        req.body.firstname,
-                        req.body.surname,
-                        req.body.email,
-                        gender,
-                        lib.toUnix(req.body.year, req.body.month, req.body.day),
-                        req.body.city,
-                        req.body.country,
-                        user.id
-                    ]
-
-                    db.query(sql, params, (err, result) => {
+                    db.query(sqlRealname, user.id, (err, result) => {
                         if (err) return res.sendStatus(400)
-                        res.sendStatus(200)
-                        //Update user last action
-                        lib.updateUserLastActionTime(db, user.id)
-                    })
+                        if (result.length === 0) return res.sendStatus(400)
+
+                        let oldName = result[0].firstname + " " + result[0].surname;
+
+                        //Update user
+                        let sqlUpdate = 'update users set firstname = ?, surname = ?, email = ?, gender = ?, birth = ?, city = ?, country = ? where id = ?'
+
+                        const params = [
+                            req.body.firstname,
+                            req.body.surname,
+                            req.body.email,
+                            gender,
+                            lib.toUnix(req.body.year, req.body.month, req.body.day),
+                            req.body.city,
+                            req.body.country,
+                            user.id
+                        ]
+
+                        db.query(sqlUpdate, params, (err, result) => {
+                            if (err) return res.sendStatus(400)
+
+                            let newName = req.body.firstname + " " + req.body.surname;
+
+                            //Update user contact alias that use his real name
+                            if (oldName !== newName) {
+                                let updateAlias = 'update contacts set from_alias = (case when from_id = ? then (case when from_alias = ? then ? else from_alias end) else from_alias end), to_alias = (case when to_id = ? then (case when to_alias = ? then ? else to_alias end) else to_alias end) where from_id = ? or to_id = ?'
+
+                                db.query(updateAlias, [user.id, oldName, newName, user.id, oldName, newName, user.id, user.id], (err, result) => {
+                                    if (err) return res.sendStatus(400)
+
+                                    res.sendStatus(200)
+                                    //Update user last action
+                                    lib.updateUserLastActionTime(db, user.id)
+                                })
+                            }
+                        })
+                    });
                 })
             })
         })

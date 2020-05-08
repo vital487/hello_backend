@@ -99,7 +99,7 @@ exports.routes = (app, db) => {
             if (req.body.userId === user.id) return res.sendStatus(400)
 
             if (req.body.start === -1) {
-                sql = 'select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id desc limit ?'
+                sql = 'select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id limit ?'
 
                 db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.number], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -108,7 +108,7 @@ exports.routes = (app, db) => {
                     lib.updateUserLastActionTime(db, user.id)
                 })
             } else {
-                sql = 'select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id desc limit ?'
+                sql = 'select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id limit ?'
 
                 db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.start, req.body.number], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -138,9 +138,9 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get last chats
-                let sql = 'select u.id, concat(u.firstname, " ", u.surname) as name, m.message, m.from_id, m.state, m.date as time from users u, messages m, (select user, max(id) as id from (select id, if(from_id = ?, to_id, from_id) as user, message, state from messages where from_id = ? or to_id = ?) a group by user) a where u.id = a.user and m.id = a.id'
+                let sql = 'select u.id, if(c.from_id = a.user, c.from_alias, c.to_alias) as name, concat(u.firstname, " ", u.surname) as realname, m.message, m.from_id, m.state, m.date as time from contacts c, users u, messages m, (select user, max(id) as id from (select id, if(from_id = ?, to_id, from_id) as user, message, state from messages where from_id = ? or to_id = ?) a group by user) a where u.id = a.user and m.id = a.id and (c.from_id = ? and c.to_id = a.user or c.from_id = a.user and c.to_id = ?)'
 
-                db.query(sql, [user.id, user.id, user.id], (err, result) => {
+                db.query(sql, [user.id, user.id, user.id, user.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
                     res.json(result)
                     //Update user last action
@@ -170,9 +170,9 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get last chats
-                let sql = 'select u.id, concat(u.firstname, " ", u.surname) as name, m.message, m.from_id, m.state, m.date as time from users u, messages m, (select user, max(id) as id from (select id, if(from_id = ?, to_id, from_id) as user, message, state from messages where from_id = ? and to_id = ? or to_id = ? and from_id = ?) a group by user) a where u.id = a.user and m.id = a.id'
+                let sql = 'select u.id, if(c.from_id = a.user, c.from_alias, c.to_alias) as name, concat(u.firstname, " ", u.surname) as realname, m.message, m.from_id, m.state, m.date as time from contacts c, users u, messages m, (select user, max(id) as id from (select id, if(from_id = ?, to_id, from_id) as user, message, state from messages where from_id = ? and to_id = ? or to_id = ? and from_id = ?) a group by user) a where u.id = a.user and m.id = a.id and (c.from_id = ? and c.to_id = a.user or c.from_id = a.user and c.to_id = ?)'
 
-                db.query(sql, [user.id, user.id, parseInt(req.params.id), user.id, parseInt(req.params.id)], (err, result) => {
+                db.query(sql, [user.id, user.id, parseInt(req.params.id), user.id, parseInt(req.params.id), user.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
                     res.json(result)
                     //Update user last action
