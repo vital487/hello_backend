@@ -51,7 +51,7 @@ app.use(function (req, res) {
 });
 
 //Start HTTPS Server
- const server = https.createServer({
+const server = https.createServer({
     cert: fs.readFileSync('/etc/letsencrypt/live/hellochat.ddns.net/fullchain.pem'),
     key: fs.readFileSync('/etc/letsencrypt/live/hellochat.ddns.net/privkey.pem')
 }, app)
@@ -62,7 +62,7 @@ app.use(function (req, res) {
     passphrase: '5440123718'
 }, app) */
 
-server.listen('444', () => {
+server.listen('443', () => {
     console.log('Server started');
 });
 
