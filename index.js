@@ -52,8 +52,8 @@ app.use(function (req, res) {
 
 //Start HTTPS Server
  const server = https.createServer({
-    cert: fs.readFileSync('/etc/letsencrypt/live/chatapi.francecentral.cloudapp.azure.com/fullchain.pem'),
-    key: fs.readFileSync('/etc/letsencrypt/live/chatapi.francecentral.cloudapp.azure.com/privkey.pem')
+    cert: fs.readFileSync('/etc/letsencrypt/live/hellochat.ddns.net/fullchain.pem'),
+    key: fs.readFileSync('/etc/letsencrypt/live/hellochat.ddns.net/privkey.pem')
 }, app)
 
 /* const server = https.createServer({
@@ -62,7 +62,7 @@ app.use(function (req, res) {
     passphrase: '5440123718'
 }, app) */
 
-server.listen('443', () => {
+server.listen('444', () => {
     console.log('Server started');
 });
 
