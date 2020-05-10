@@ -571,7 +571,7 @@ exports.routes = (app, db) => {
                 db.query(sqlRequests, [user.id, user.id, req.params.id, req.params.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
                     if (result.length === 0) return res.sendStatus(400)
-                    if (result[0].last_update + 300 > lib.getUnixTime()) res.json({ online: true })
+                    if (result[0].last_update + 300 > lib.getUnixTime()) res.json({ online: true, lastSeen: result[0].last_update })
                     else res.json({ online: false, lastSeen: result[0].last_update })
 
                     //Update user last action

@@ -122,7 +122,7 @@ exports.routes = (app, db) => {
 
             if (passwordHash !== result[0].password) return res.sendStatus(403)
 
-            jwt.sign({ id: result[0].id, email: req.body.email }, keyPair.priv, { expiresIn: '10h', algorithm: 'RS256' }, (err, token) => {
+            jwt.sign({ id: result[0].id, email: req.body.email }, keyPair.priv, { expiresIn: '3h', algorithm: 'RS256' }, (err, token) => {
                 if (err) return res.sendStatus(400)
                 res.status(200).json({ token })
                 //Update user last action

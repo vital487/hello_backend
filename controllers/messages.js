@@ -99,7 +99,7 @@ exports.routes = (app, db) => {
             if (req.body.userId === user.id) return res.sendStatus(400)
 
             if (req.body.start === -1) {
-                sql = 'select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id limit ?'
+                sql = '(select * from messages where from_id = ? and to_id = ? or from_id = ? and to_id = ? order by id desc limit ?) order by id'
 
                 db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.number], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -108,7 +108,7 @@ exports.routes = (app, db) => {
                     lib.updateUserLastActionTime(db, user.id)
                 })
             } else {
-                sql = 'select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id limit ?'
+                sql = '(select * from messages where (from_id = ? and to_id = ? or from_id = ? and to_id = ?) and id < ? order by id desc limit ?) order by id'
 
                 db.query(sql, [user.id, req.body.userId, req.body.userId, user.id, req.body.start, req.body.number], (err, result) => {
                     if (err) return res.sendStatus(400)

@@ -57,9 +57,8 @@ app.use(function (req, res) {
 }, app) */
 
 const server = https.createServer({
-    cert: fs.readFileSync('./cert.pem'),
-    key: fs.readFileSync('./key.pem'),
-    passphrase: '5440123718'
+    cert: fs.readFileSync('./fullchain1.pem'),
+    key: fs.readFileSync('./privkey1.pem')
 }, app)
 
 server.listen('444', () => {
@@ -90,5 +89,25 @@ io.on('connection', (socket) => {
                 }
             });
         });
+    });
+
+    socket.on('writing', (obj) => {
+        //Check if destination is online
+        if (typeof users[`${obj.destination}`] !== 'undefined') {
+            //Send message for every socket from destination
+            for (let i = 0; i < users[`${obj.destination}`].length; i++) {
+                users[`${obj.destination}`][i].emit('writing', obj.myself);
+            }
+        }
+    });
+
+    socket.on('stop_writing', (obj) => {
+        //Check if destination is online
+        if (typeof users[`${obj.destination}`] !== 'undefined') {
+            //Send message for every socket from destination
+            for (let i = 0; i < users[`${obj.destination}`].length; i++) {
+                users[`${obj.destination}`][i].emit('stop_writing', obj.myself);
+            }
+        }
     });
 });
