@@ -53,6 +53,7 @@ CREATE TABLE `contacts` (
   `from_color` varchar(10) DEFAULT '#987654',
   `to_alias` varchar(60) DEFAULT NULL,
   `to_color` varchar(10) DEFAULT '#123456',
+  `deleted` bit(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`from_id`) REFERENCES `users` (`id`),
   FOREIGN KEY (`to_id`) REFERENCES `users` (`id`)

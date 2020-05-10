@@ -41,41 +41,63 @@ exports.routes = (app, db) => {
 
                 const usersResult = result
                 //Verify if a contact already exists
-                const sqlContact = 'select id from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
+                const sqlContact = 'select id, accepted, deleted from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
                 db.query(sqlContact, [user.id, req.body.id, req.body.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
-                    if (result.length > 0) return res.sendStatus(400)
 
-                    let contact = {
-                        id: null,
-                        from_id: user.id,
-                        accepted: 0,
-                        to_id: req.body.id,
-                        from_alias: usersResult[0].id === user.id ? usersResult[0].name : usersResult[1].name,
-                        from_color: '#987654',
-                        to_alias: usersResult[0].id === req.body.id ? usersResult[0].name : usersResult[1].name,
-                        to_color: '#123456'
-                    }
+                    //If contact existed and was deleted -> change deleted column and send request
+                    if (result.length === 1 && result[0].deleted === 1) {
+                        //Update deleted column to 0
+                        let updateContact = 'update contacts set deleted = 0, accepted = 0 where id = ?'
 
-                    //Insert the new contact
-                    const insert = 'insert into contacts set ?'
-
-                    db.query(insert, contact, (err, result) => {
-                        if (err) return res.sendStatus(400)
-                        contact.id = result.insertId
-                        res.status(201).json(contact)
-                        //Update user last action
-                        lib.updateUserLastActionTime(db, user.id)
-
-                        //Check if destination is online
-                        if (typeof users[`${req.body.id}`] !== 'undefined') {
-                            //Send new contact request notification for every socket from destination
-                            for (let i = 0; i < users[`${req.body.id}`].length; i++) {
-                                users[`${req.body.id}`][i].emit('contact_request', user.id);
+                        db.query(updateContact, result[0].id, (err, result) => {
+                            if (err) return res.sendStatus(400)
+                            res.sendStatus(201);
+                            //Update user last action
+                            lib.updateUserLastActionTime(db, user.id)
+    
+                            //Check if destination is online
+                            if (typeof users[`${req.body.id}`] !== 'undefined') {
+                                //Send new contact request notification for every socket from destination
+                                for (let i = 0; i < users[`${req.body.id}`].length; i++) {
+                                    users[`${req.body.id}`][i].emit('contact_request', user.id);
+                                }
                             }
+                        });
+                    }
+                    //If contact never existed -> creates it
+                    else {
+                        let contact = {
+                            id: null,
+                            from_id: user.id,
+                            accepted: 0,
+                            to_id: req.body.id,
+                            from_alias: usersResult[0].id === user.id ? usersResult[0].name : usersResult[1].name,
+                            from_color: '#987654',
+                            to_alias: usersResult[0].id === req.body.id ? usersResult[0].name : usersResult[1].name,
+                            to_color: '#123456'
                         }
-                    })
+    
+                        //Insert the new contact
+                        const insert = 'insert into contacts set ?'
+    
+                        db.query(insert, contact, (err, result) => {
+                            if (err) return res.sendStatus(400)
+                            contact.id = result.insertId
+                            res.status(201).json(contact)
+                            //Update user last action
+                            lib.updateUserLastActionTime(db, user.id)
+    
+                            //Check if destination is online
+                            if (typeof users[`${req.body.id}`] !== 'undefined') {
+                                //Send new contact request notification for every socket from destination
+                                for (let i = 0; i < users[`${req.body.id}`].length; i++) {
+                                    users[`${req.body.id}`][i].emit('contact_request', user.id);
+                                }
+                            }
+                        }) 
+                    }                    
                 })
             })
         })
@@ -121,13 +143,16 @@ exports.routes = (app, db) => {
                     //If contact is not accepted
                     if (result[0].accepted[0] === 0) return res.sendStatus(400)
 
-                    const contact = result
-                    //Remove contact
-                    let sqlRemove = 'delete from contacts where id = ?'
+                    const contact = result[0];
+                    //Remove contact by changing deleted and accepted column
+                    let sqlUpdate = 'update contacts set deleted = 1, accepted = 0 where id = ?'
 
-                    db.query(sqlRemove, result[0].id, (err, result) => {
+                    db.query(sqlUpdate, result[0].id, (err, result) => {
                         if (err) return res.sendStatus(400)
-                        res.json(contact[0])
+                        contact.deleted = 1;
+                        contact.accepted = 0;
+                        res.json(contact);
+
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
 
@@ -226,13 +251,16 @@ exports.routes = (app, db) => {
                     if (err) return res.sendStatus(400)
                     if (result.length === 0) return res.sendStatus(400)
 
-                    const contact = result
-                    //Delete contact request
-                    const sqlDelete = 'delete from contacts where id = ?'
+                    const contact = result[0]
+                    //Set deleted column to 1 for contact row continue to exist
+                    const sqlUpdate = 'update contacts set deleted = 1, accepted = 0 where id = ?'
 
-                    db.query(sqlDelete, result[0].id, (err, result) => {
+                    db.query(sqlUpdate, result[0].id, (err, result) => {
                         if (err) return res.sendStatus(400)
-                        res.json(contact[0])
+                        
+                        contact.deleted = 1;
+                        contact.accepted = 0;
+                        res.json(contact)
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
                     })
