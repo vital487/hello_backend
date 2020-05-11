@@ -47,7 +47,7 @@ exports.routes = (app, db) => {
                     if (err) return res.sendStatus(400)
 
                     //If contact existed and was deleted -> change deleted column and send request
-                    if (result.length === 1 && result[0].deleted === 1) {
+                    if (result.length === 1 && result[0].deleted[0] === 1) {
                         //Update deleted column to 0
                         let updateContact = 'update contacts set deleted = 0, accepted = 0, from_id = ?, to_id = ?, from_alias = ?, to_alias = ? where id = ?'
 
@@ -163,8 +163,8 @@ exports.routes = (app, db) => {
 
                     db.query(sqlUpdate, result[0].id, (err, result) => {
                         if (err) return res.sendStatus(400)
-                        contact.deleted = 1;
-                        contact.accepted = 0;
+                        contact.deleted[0] = 1;
+                        contact.accepted[0] = 0;
                         res.json(contact);
 
                         //Update user last action
@@ -206,7 +206,7 @@ exports.routes = (app, db) => {
                 if (result.length !== 2) return res.sendStatus(400)
 
                 //Verify if the request exists
-                const sqlContact = 'select * from contacts where from_id = ? and to_id = ? and accepted = 0'
+                const sqlContact = 'select * from contacts where from_id = ? and to_id = ? and accepted = 0 and deleted = 0'
 
                 db.query(sqlContact, [req.body.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -272,8 +272,8 @@ exports.routes = (app, db) => {
                     db.query(sqlUpdate, result[0].id, (err, result) => {
                         if (err) return res.sendStatus(400)
                         
-                        contact.deleted = 1;
-                        contact.accepted = 0;
+                        contact.deleted[0] = 1;
+                        contact.accepted[0] = 0;
                         res.json(contact)
                         //Update user last action
                         lib.updateUserLastActionTime(db, user.id)
@@ -447,7 +447,7 @@ exports.routes = (app, db) => {
                 if (result.length !== 2) return res.sendStatus(400)
 
                 //Verify if contact or request exists
-                const sqlContact = 'select from_id, accepted from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
+                const sqlContact = 'select from_id, accepted, deleted from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
                 db.query(sqlContact, [user.id, parseInt(req.params.id), parseInt(req.params.id), user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -457,9 +457,13 @@ exports.routes = (app, db) => {
                         request: false,
                         type: false
                     })
-
                     else if (result[0].accepted[0] === 1) res.json({
                         contact: true,
+                        request: false,
+                        type: false
+                    })
+                    else if (result[0].deleted[0] === 1) res.json({
+                        contact: false,
                         request: false,
                         type: false
                     })
