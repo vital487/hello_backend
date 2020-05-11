@@ -41,7 +41,7 @@ exports.routes = (app, db) => {
 
                 const usersResult = result
                 //Verify if a contact already exists
-                const sqlContact = 'select id, accepted, deleted from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
+                const sqlContact = 'select id, from_id, to_id, from_alias, to_alias, deleted from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
                 db.query(sqlContact, [user.id, req.body.id, req.body.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -49,9 +49,23 @@ exports.routes = (app, db) => {
                     //If contact existed and was deleted -> change deleted column and send request
                     if (result.length === 1 && result[0].deleted === 1) {
                         //Update deleted column to 0
-                        let updateContact = 'update contacts set deleted = 0, accepted = 0 where id = ?'
+                        let updateContact = 'update contacts set deleted = 0, accepted = 0, from_id = ?, to_id = ?, from_alias = ?, to_alias = ? where id = ?'
 
-                        db.query(updateContact, result[0].id, (err, result) => {
+                        let params = {};
+
+                        if (result[0].from_id === user.id) {
+                            params.from_id = user.id;
+                            params.to_id = req.body.id;
+                            params.from_alias = result[0].from_alias;
+                            params.to_alias = result[0].to_alias;
+                        } else {
+                            params.from_id = user.id;
+                            params.to_id = req.body.id;
+                            params.from_alias = result[0].to_alias;
+                            params.to_alias = result[0].from_alias;
+                        }
+
+                        db.query(updateContact, [params.from_id, params.to_id, params.from_alias, params.to_alias, result[0].id], (err, result) => {
                             if (err) return res.sendStatus(400)
                             res.sendStatus(201);
                             //Update user last action
@@ -74,9 +88,9 @@ exports.routes = (app, db) => {
                             accepted: 0,
                             to_id: req.body.id,
                             from_alias: usersResult[0].id === user.id ? usersResult[0].name : usersResult[1].name,
-                            from_color: '#987654',
+                            from_color: '#eb4034',
                             to_alias: usersResult[0].id === req.body.id ? usersResult[0].name : usersResult[1].name,
-                            to_color: '#123456'
+                            to_color: '#8eedd1'
                         }
     
                         //Insert the new contact
@@ -475,7 +489,7 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get requests
-                const sqlRequests = 'select users.id, firstname, surname, gender, city, country from contacts, users where users.id = from_id and to_id = ? and accepted = 0'
+                const sqlRequests = 'select users.id, firstname, surname, gender, city, country from contacts, users where users.id = from_id and to_id = ? and accepted = 0 and deleted = 0'
 
                 db.query(sqlRequests, user.id, (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -500,7 +514,7 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get contacts
-                const sqlRequests = 'select id, firstname, surname, gender, city, country from users where id in (select if (from_id = ?, to_id, from_id) as id from contacts where accepted = 1 and (from_id = ? or to_id = ?))'
+                const sqlRequests = 'select id, firstname, surname, gender, city, country from users where id in (select if (from_id = ?, to_id, from_id) as id from contacts where accepted = 1 and deleted = 0 and (from_id = ? or to_id = ?))'
 
                 db.query(sqlRequests, [user.id, user.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -529,7 +543,7 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get contact
-                const sqlRequests = 'select * from contacts where accepted = 1 and (from_id = ? and to_id = ? or from_id = ? and to_id = ?)'
+                const sqlRequests = 'select * from contacts where accepted = 1 and deleted = 0 and (from_id = ? and to_id = ? or from_id = ? and to_id = ?)'
 
                 db.query(sqlRequests, [user.id, req.params.id, req.params.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
@@ -556,7 +570,7 @@ exports.routes = (app, db) => {
                 if (result.length === 0) return res.sendStatus(400)
 
                 //Get contact
-                const sqlRequests = 'select * from contacts where accepted = 1 and (from_id = ? and to_id = ? or from_id = ? and to_id = ?)'
+                const sqlRequests = 'select * from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
                 db.query(sqlRequests, [user.id, req.params.id, req.params.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
