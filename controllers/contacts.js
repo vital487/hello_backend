@@ -151,7 +151,7 @@ exports.routes = (app, db) => {
                 if (result.length !== 2) return res.sendStatus(400)
 
                 //Verify if the contact exists
-                const sqlContact = 'select * from contacts where from_id = ? and to_id = ? or from_id = ? and to_id'
+                const sqlContact = 'select * from contacts where from_id = ? and to_id = ? or from_id = ? and to_id = ?'
 
                 db.query(sqlContact, [user.id, req.body.id, req.body.id, user.id], (err, result) => {
                     if (err) return res.sendStatus(400)
